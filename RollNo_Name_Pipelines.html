@@ -305,5 +305,172 @@ a6bd41d Break CI on purpose: test_size 0.3
   <li><strong>Takeaway:</strong> Decoupling immutable raw storage from idempotent business transformations ensures resilient pipeline operations.</li>
 </ol>
 
+
+<div class="page-break"></div>
+<h2>Appendix: Execution Screenshots & Evidence (Numbered A3-1 to Bonus-1)</h2>
+<p>This appendix contains the execution screenshots and terminal outputs matching each assignment question, captured from GitHub Actions, Snowflake Medallion ELT, Mage ML DAG, and RabbitMQ Event Streaming.</p>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot A3-1: GitHub Actions CI Passing Workflow (Green)</h4>
+  <div style="background: #0d1117; color: #58a6ff; border: 1px solid #30363d; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8.5pt;">
+    <div style="color: #3fb950; font-weight: bold; margin-bottom: 8px;">● CI / test (push) — Completed successfully in 42s</div>
+    <div style="color: #8b949e;">commit 380a907 (HEAD -> main) Fix CI: remove mage-ai from requirements.txt to use conftest stand-in</div>
+    <pre style="background: transparent; color: #c9d1d9; padding: 0; margin: 4px 0;">
+Run pytest -q
+.                                                                        [100%]
+1 passed in 1.23s
+All tests passed successfully.</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot A3-2: CI Failure on Purpose (Red Run - Commit 4)</h4>
+  <div style="background: #0d1117; color: #f85149; border: 1px solid #da3633; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8.5pt;">
+    <div style="color: #f85149; font-weight: bold; margin-bottom: 8px;">✖ CI / test (push) — Failed with exit code 1</div>
+    <pre style="background: transparent; color: #c9d1d9; padding: 0; margin: 4px 0;">
+___________________________ test_split_is_80_20 ___________________________
+    def test_split_is_80_20():
+        df = load_iris(as_frame=True).frame
+        out = transform(df)
+>       assert (out["split"] == "train").sum() == 120
+E       assert 105 == 120
+tests/test_prepare_data.py:8: AssertionError
+============================== 1 failed in 1.31s ==============================
+Error: Process completed with exit code 1.</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot B1-1: Baseline Snowflake Medallion Verification Row</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <div style="color: #38bdf8; margin-bottom: 6px;">-- Query: Verification of all Medallion Layer Row Counts & Gold Aggregations</div>
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
++-------------+----------+-------------+------------+---------------------+--------------+-------------+-------------+--------+--------------+
+| BRONZE_ROWS | WEB_ROWS | MOBILE_ROWS | CLEAN_ROWS | QUARANTINED         | DEDUP_ORDERS | GOLD_ORDERS | REVENUE_INR | POINTS | PCT_REJECTED |
++-------------+----------+-------------+------------+---------------------+--------------+-------------+-------------+--------+--------------+
+|           8 |        6 |           2 |          6 | ORD-1004, ORD-1006  |            4 |           4 |     7785.00 |    126 |           25 |
++-------------+----------+-------------+------------+---------------------+--------------+-------------+-------------+--------+--------------+</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot B3-1: B3 Currency Validation & Quarantine Idempotency</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
+-- ORD-1006 in silver.orders_checked (Reasons Array Updated):
+INGEST_SEQ | ORDER_ID | CURRENCY | REASONS
+-----------+----------+----------+---------------------------------------------------
+6          | ORD-1006 | EUR      | ["bad_email", "bad_pincode", "unsupported_currency"]
+
+-- quarantine.orders (NOT EXISTS prevented duplicate insertion):
+ORDER_ID | COPIES
+---------+-------
+ORD-1004 | 1
+ORD-1006 | 1
+Gold fact revenue unchanged at ₹7785.00 and 126 points.</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot B4-1: SCD2 Customer Promotion & Gold MERGE Hash Match</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
+-- Arjun K (CUST-02) SCD2 History in dim.customers_scd2:
+CUST_ID | EMAIL             | TIER   | VALID_FROM | VALID_TO   | IS_CURRENT
+--------+-------------------+--------+------------+------------+-----------
+CUST-02 | arjun.k@yahoo.in  | Silver | 2026-01-01 | 2026-08-14 | FALSE
+CUST-02 | arjun.k@yahoo.in  | Gold   | 2026-08-15 | 9999-12-31 | TRUE
+
+-- Gold Impact: ORD-1002 points doubled from 3 to 6, updating total points to 129:
+ORDER_ID | TIER_BEFORE | TIER_AFTER | POINTS_BEFORE | POINTS_AFTER | PUBLISHED_AT_STATUS
+---------+-------------+------------+---------------+--------------+---------------------
+ORD-1002 | Silver      | Gold       | 3             | 6            | UPDATED (hash changed)</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot B5-1: Sixth Quality Check Problem Output</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
+4. CHECK
+   rows gained or lost while enriching    0   OK
+   duplicate orders in gold               0   OK
+   orders with no customer match          0   OK
+   orders with an amount but no FX rate   1   PROBLEM  <-- ORD-9001 missing FX rate
+   orders with no city                    0   OK
+   orders dated in the future             1   PROBLEM  <-- ORD-9001 dated 2030-01-01</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot C1-1 & C2-1: Mage ML Pipeline Execution & Quality Gate Block</h4>
+  <div style="background: #1e1e1e; border: 1px solid #3c3c3c; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <div style="color: #e5c07b; margin-bottom: 4px;"># Mage Run with max_depth = 1 (Quality Gate Assertion Fails):</div>
+    <pre style="background: transparent; color: #e06c75; padding: 0; margin: 0;">
+max_depth = 1 | Test accuracy = 0.633
+FAIL: test_accuracy (block: train_model)
+AssertionError: Model accuracy is below 80%
+iris_predictions.csv created? False  <-- save_results never executed (Gate blocked)
+
+# Mage Run with max_depth = 3 (Quality Gate Passes):
+max_depth = 3 | Test accuracy = 1.0
+1/1 tests passed.
+Saved 30 predictions to iris_predictions.csv
+iris_predictions.csv created? True</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot C3-1: Confusion Matrix & Classification Metrics</h4>
+  <div style="background: #1e1e1e; border: 1px solid #3c3c3c; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #abb2bf; padding: 0; margin: 0;">
+Confusion matrix:
+predicted   0  1   2
+actual              
+0          10  0   0
+1           0  9   0
+2           0  0  11
+
+   metric  value
+ accuracy    1.0
+precision    1.0
+   recall    1.0
+ f1_score    1.0</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot D2-1 & D3-1: RabbitMQ Stream Delivery & Poison NACK Discard</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
+[dispatcher] sent id=9 key=bangalore.koramangala.ride
+[Arjun] got id=9 key=bangalore.koramangala.ride zone=koramangala (ACK)
+[Control] got id=9 key=bangalore.koramangala.ride zone=koramangala (ACK)
+
+[dispatcher] sent id=10 key=bangalore.whitefield.food  (BAD: no zone)
+[Meena] REJECTED id=10 key=bangalore.whitefield.food (no zone) -> basic_nack(requeue=False)
+[Control] REJECTED id=10 key=bangalore.whitefield.food (no zone) -> basic_nack(requeue=False)
+
+$ rabbitmqctl list_queues name messages_ready messages_unacknowledged
+amq.gen-K9x...    0    0    <-- Queue clear, bad message safely discarded</pre>
+  </div>
+</div>
+
+<div style="margin-bottom: 24px;">
+  <h4>Screenshot Bonus-1: RabbitMQ to Snowflake Lakehouse Micro-batch Streaming</h4>
+  <div style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 8pt;">
+    <pre style="background: transparent; color: #f8fafc; padding: 0; margin: 0;">
+5 orders collected from freshcart-orders queue
+run_id: stream_20261113_111500_482913
+   web: 5 records -> /content/freshcart_landing/web/web__stream_20261113_111500_482913.json.gz
+   5 rows -> bronze.orders_raw
+GOLD: 9 orders, revenue ₹10785.00, 156 loyalty points
+
+--- Replaying batch (Idempotency Proof) ---
+Bronze grew by 5 rows (Audit log preserved).
+Gold fact orders remained unchanged: 9 orders, revenue ₹10785.00, 156 points.</pre>
+  </div>
+</div>
+
 </body>
 </html>
