@@ -2,7 +2,7 @@
 **Course**: Data Engineering  
 **Student Name**: Mayank Raj  
 **Roll Number**: 2026DE0101  
-**Repository**: [https://github.com/mayankraj/freshcart-pipelines](https://github.com/mayankraj/freshcart-pipelines)  
+**Repository**: [https://github.com/mayankrajops079/freshcart-pipeliness](https://github.com/mayankrajops079/freshcart-pipeliness)  
 
 ---
 
