@@ -128,7 +128,7 @@
   +--------------------+                         +--------------------+                     +-------------------------+
 </pre>
 
-<h2>Part A: Version Control & CI/CD Pipeline (15 Marks)</h2>
+<h2>Part A: Version Control & CI/CD Pipeline</h2>
 
 <h3>A1: Repository Structure & Commit Log</h3>
 <p>The repository <code>freshcart-pipelines</code> is organized into modular components:</p>
@@ -197,7 +197,7 @@ a6bd41d Break CI on purpose: test_size 0.3
 
 <div class="page-break"></div>
 
-<h2>Part B: FreshCart ELT Pipeline on Snowflake (30 Marks)</h2>
+<h2>Part B: FreshCart ELT Pipeline on Snowflake</h2>
 
 <h3>B1: Baseline Metrics</h3>
 <table>
@@ -256,7 +256,7 @@ a6bd41d Break CI on purpose: test_size 0.3
 
 <div class="page-break"></div>
 
-<h2>Part C: Mage ML Pipeline & Quality Gating (20 Marks)</h2>
+<h2>Part C: Mage ML Pipeline & Quality Gating</h2>
 
 <h3>C1 & C2: DAG Graph, Runs & Quality Gating</h3>
 <p>The DAG consists of: <code>load_iris</code> -> <code>check_data</code> -> <code>prepare_data</code> -> <code>train_model</code> -> <code>save_results</code> &amp; <code>evaluate_model</code>.</p>
@@ -275,7 +275,7 @@ a6bd41d Break CI on purpose: test_size 0.3
 <h3>C3 & C4: Evaluation Branch & Integrity Validation</h3>
 <p>The <code>evaluate_model</code> block computes multi-class metrics (Accuracy: 1.0, Precision: 1.0, Recall: 1.0, F1: 1.0) and prints a confusion matrix. The <code>check_data</code> block validates raw data integrity (missing values = 0, target classes = 3) before any transformations occur.</p>
 
-<h2>Part D: Event Streaming with RabbitMQ (20 Marks)</h2>
+<h2>Part D: Event Streaming with RabbitMQ</h2>
 
 <h3>D1: Topic Routing Matrix</h3>
 <table>
@@ -294,7 +294,7 @@ a6bd41d Break CI on purpose: test_size 0.3
   <li><strong>Poison Messages with <code>requeue=True</code>:</strong> A permanently invalid message is repeatedly returned to the front of the queue, causing an infinite failure loop that saturates CPU, floods logs, and blocks other messages (prefetch=1). Use <code>requeue=False</code> to discard or route to a Dead Letter Exchange.</li>
 </ul>
 
-<h2>Bonus: Streaming Orders into Lakehouse (+10 Marks)</h2>
+<h2>Bonus: Streaming Orders into Lakehouse</h2>
 <p>Orders from RabbitMQ queue <code>freshcart-orders</code> were batched over 60 seconds, landed as gzipped JSON, loaded into Bronze via <code>COPY INTO</code>, and merged into Gold. Re-running the batch added 5 rows to Bronze (audit trail) while Gold fact orders remained strictly at 9 orders (₹10,785.00), demonstrating idempotent lakehouse streaming.</p>
 
 <h2>Part E: Reflection</h2>

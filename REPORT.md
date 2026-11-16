@@ -446,7 +446,7 @@ Driver Subscriptions:
 
 ---
 
-## Bonus: Streaming Orders into Lakehouse (+10 Marks)
+## Bonus: Streaming Orders into Lakehouse
 A micro-batch ingestion consumer collects orders from RabbitMQ queue `freshcart-orders` over a 60-second window, stages them into landing files, invokes `load_file()` into `bronze.orders_raw`, and runs `SQL_10` through `SQL_40`:
 - **First Run**: 5 orders ingested -> Bronze +5 rows -> Gold expanded from 4 to 9 orders (revenue ₹10,785.00, 156 points). Messages acknowledged with `ch.basic_ack(delivery_tag=last_tag, multiple=True)`.
 - **Replay / Duplicate Run**: The same 5 orders re-ingested -> Bronze grew by 5 (audit trail maintained) -> Gold remained strictly 9 orders, ₹10,785.00 (idempotent MERGE avoided double counting).
